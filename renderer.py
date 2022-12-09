@@ -21,6 +21,9 @@ currentTime = 0
 cameraOrigin = [0, 0, -5]
 cameraRotationEulers = [0, 0, 0] # (0, 0, 0) faces the positive z
 cameraVelocity = [0, 0, 0]
+frustumVertical = 0
+frustumHorizontal = 0
+
 # Data
 cameraVerticalFOV = 90
 cameraHorizontalFOV = 0 # Editing value will do nothing, calculated based upon cameraVerticalFOV
@@ -71,12 +74,18 @@ def GenerateVectors():
     
 def CalculateHorizontalFOV():
     global cameraHorizontalFOV
+    global frustumVertical
+    global frustumHorizontal
+    
     unitVertical = math.tan(math.radians(cameraVerticalFOV / 2)) * 2
     unitHorizontal = unitVertical * aspectRatio
     
     horizontalFOV = math.degrees(math.atan2(unitHorizontal / 2, 1) * 2)
     
     cameraHorizontalFOV = horizontalFOV
+    
+    frustumVertical = unitVertical
+    frustumHorizontal = unitHorizontal
     
 def GenerateDrawOrder():
     global drawOrder
@@ -109,18 +118,22 @@ def Pythagorean(a, b):
     h = math.sqrt((a ** 2) + (b ** 2))
     return h
 
+#def Flatten
+
 def CalculateVerticalPlacement(point):
     horizontalDistance = math.fabs(cameraOrigin[2] - point[2])
     verticalDistance = math.fabs(cameraOrigin[1] - point[1])
     
     angleFromCam = math.degrees(math.atan2(verticalDistance, horizontalDistance))
-    angleFromTop = cameraVerticalFOV / 2
-    if point[1] < cameraOrigin[1]:
-        angleFromTop += angleFromCam
-    else:
-        angleFromTop -= angleFromCam
+    heightFromCam = math.tan(math.radians(angleFromCam))
     
-    screenSpaceComponent = angleFromTop / cameraVerticalFOV
+    distanceFromTop = frustumVertical / 2
+    if point[1] < cameraOrigin[1]:
+        distanceFromTop += heightFromCam
+    else:
+        distanceFromTop -= heightFromCam
+    
+    screenSpaceComponent = distanceFromTop / frustumVertical
         
     return screenSpaceComponent
     
@@ -129,13 +142,15 @@ def CalculateHorizontalPlacement(point):
     verticalDistance = math.fabs(cameraOrigin[2] - point[2])
     
     angleFromCam = math.degrees(math.atan2(horizontalDistance, verticalDistance))
-    angleFromLeft = cameraHorizontalFOV / 2
+    widthFromCam = math.tan(math.radians(angleFromCam))
+    
+    distanceFromLeft = frustumHorizontal / 2
     if point[0] < cameraOrigin[0]:
-        angleFromLeft -= angleFromCam
+        distanceFromLeft -= widthFromCam
     else:
-        angleFromLeft += angleFromCam
+        distanceFromLeft += widthFromCam
         
-    screenSpaceComponent = angleFromLeft / cameraHorizontalFOV
+    screenSpaceComponent = distanceFromLeft / frustumHorizontal
     return screenSpaceComponent
 
 def CalculateScreenCoordinates(point):
